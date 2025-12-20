@@ -32,7 +32,7 @@ namespace Test_Api.Areas.Identity
             _orderrepository = orderrepository;
         }
 
-        [HttpGet("GetCartItems/{code}")]
+        [HttpGet("GetCartItems")]
         public async Task<IActionResult> GetCartItems(string? code,CancellationToken cancellationToken)
         {
             var userid = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -47,15 +47,18 @@ namespace Test_Api.Areas.Identity
             }
             var cartitems = await _cartrepository.GetAllAsync(e => e.ApplicationUserId == user.Id && e.Courses.Status , includes: [e=>e.ApplicationUsers,e=>e.Courses], tracked: false,cancellationToken);
 
-            var promotion = await _promotionrepository.GetOneAsync(e => e.Code == code && e.IsActive, tracked: false,cancellationToken:cancellationToken);
-            if (promotion is not null)
+            if (code is not null)
             {
-                var result = cartitems.FirstOrDefault(e => e.Courseid == promotion.CourseId);
-                if (result is not null)
+                var promotion = await _promotionrepository.GetOneAsync(e => e.Code == code && e.IsActive, tracked: false, cancellationToken: cancellationToken);
+                if (promotion is not null)
                 {
-                    result.Price = result.Price - (decimal)(result.Price * promotion.DiscountPercentage / 100);
+                    var result = cartitems.FirstOrDefault(e => e.Courseid == promotion.CourseId);
+                    if (result is not null)
+                    {
+                        result.Price = result.Price - (decimal)(result.Price * promotion.DiscountPercentage / 100);
+                    }
+                    await _cartrepository.ComitSaveAsync(cancellationToken);
                 }
-                await _cartrepository.ComitSaveAsync(cancellationToken);
             }
             return Ok(cartitems);
         }
@@ -149,8 +152,8 @@ namespace Test_Api.Areas.Identity
                 PaymentMethodTypes = new List<string> { "card" },
                 LineItems = new List<SessionLineItemOptions>(),
                 Mode = "payment",
-                SuccessUrl = $"{Request.Scheme}://{Request.Host}/customer/checkout/success?orderId={order.Id}",
-                CancelUrl = $"{Request.Scheme}://{Request.Host}/customer/checkout/cancel?orderId={order.Id}",
+                SuccessUrl = $"{Request.Scheme}://{Request.Host}/Students/CheckOut/success?orderId={order.Id}",
+                CancelUrl = $"{Request.Scheme}://{Request.Host}/Students/CheckOut/cancel?orderId={order.Id}",
             };
 
 

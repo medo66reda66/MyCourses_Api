@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using Test_Api.Models;
 
 namespace Test_Api.Models
 {

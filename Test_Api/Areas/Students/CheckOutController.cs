@@ -33,7 +33,7 @@ namespace Test_Api.Areas.Students
         }
 
         [HttpPut("{orderId}")]
-        public async Task<IActionResult> Successd(int orderId , CancellationToken cancellationToken)
+        public async Task<IActionResult> success(int orderId , CancellationToken cancellationToken)
         {
             var order = await _orderRepository.GetOneAsync(e=>e.Id == orderId);
             if (order == null) 
@@ -78,9 +78,13 @@ namespace Test_Api.Areas.Students
             return Ok();
         }
 
-        public IActionResult Canceld()
+        [HttpPut("{orderId}")]
+        public IActionResult cancel(int orderId)
         {
-            return Ok();
+            return BadRequest(new
+            {
+                msg="canceld buy course"
+            });
         }
     }
 }
