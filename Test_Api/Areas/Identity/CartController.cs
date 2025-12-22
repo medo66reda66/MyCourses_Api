@@ -15,6 +15,7 @@ namespace Test_Api.Areas.Identity
     [ApiController]
     [Area("Identity")]
     [Authorize]
+
     public class CartController : ControllerBase
     {
         public readonly IRepository<Course> _courserepository;
@@ -32,7 +33,7 @@ namespace Test_Api.Areas.Identity
             _orderrepository = orderrepository;
         }
 
-        [HttpGet("GetCartItems")]
+        [HttpPut("GetCartItems/{code?}")]
         public async Task<IActionResult> GetCartItems(string? code,CancellationToken cancellationToken)
         {
             var userid = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -45,11 +46,11 @@ namespace Test_Api.Areas.Identity
                     msg = "No user found",
                 });
             }
-            var cartitems = await _cartrepository.GetAllAsync(e => e.ApplicationUserId == user.Id && e.Courses.Status , includes: [e=>e.ApplicationUsers,e=>e.Courses], tracked: false,cancellationToken);
+            var cartitems = await _cartrepository.GetAllAsync(e => e.ApplicationUserId == user.Id && e.Courses.Status , includes: [e=>e.ApplicationUsers,e=>e.Courses],cancellationToken:cancellationToken);
 
             if (code is not null)
             {
-                var promotion = await _promotionrepository.GetOneAsync(e => e.Code == code && e.IsActive, tracked: false, cancellationToken: cancellationToken);
+                var promotion = await _promotionrepository.GetOneAsync(e => e.Code == code && e.IsActive, cancellationToken: cancellationToken);
                 if (promotion is not null)
                 {
                     var result = cartitems.FirstOrDefault(e => e.Courseid == promotion.CourseId);
@@ -137,26 +138,31 @@ namespace Test_Api.Areas.Identity
                 return NotFound();
 
             var cart = await _cartrepository.GetAllAsync(e => e.ApplicationUserId == user.Id, includes: [e => e.Courses]);
-
-            var order = await _orderrepository.AddAsync(new()
-            {
-                TotalPrice= cart.Sum(e=>e.Price),
-                ApplicationUserId=user.Id,
-            },cancellationToken);
-            await _orderrepository.ComitSaveAsync(cancellationToken);
-
             if (cart is null) return NotFound();
+
+            var order = new Order
+            {
+                TotalPrice = cart.Sum(e => e.Price),
+                ApplicationUserId = user.Id,
+            };
+           await _orderrepository.AddAsync(order,cancellationToken);
+
+            //var order = await _orderrepository.AddAsync(new()
+            //{
+            //    TotalPrice= cart.Sum(e=>e.Price),
+            //    ApplicationUserId=user.Id,
+            //},cancellationToken);
+
+            await _orderrepository.ComitSaveAsync(cancellationToken);
 
             var options = new SessionCreateOptions
             {
                 PaymentMethodTypes = new List<string> { "card" },
                 LineItems = new List<SessionLineItemOptions>(),
                 Mode = "payment",
-                SuccessUrl = $"{Request.Scheme}://{Request.Host}/Students/CheckOut/success?orderId={order.Id}",
-                CancelUrl = $"{Request.Scheme}://{Request.Host}/Students/CheckOut/cancel?orderId={order.Id}",
+                SuccessUrl = $"{Request.Scheme}://{Request.Host}/Students/CheckOut/success/{order.Id}",
+                CancelUrl = $"{Request.Scheme}://{Request.Host}/Students/CheckOut/cancel/{order.Id}",
             };
-
-
 
             foreach (var item in cart)
             {
@@ -174,7 +180,6 @@ namespace Test_Api.Areas.Identity
                     },
                     Quantity = 1,
                 });
-                
             }
 
             var service = new SessionService();

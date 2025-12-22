@@ -23,11 +23,21 @@
         public decimal TotalPrice { get; set; }
         public OrderStatus Status { get; set; } = OrderStatus.Pending;
         public TransactionType TransactionType { get; set; } = TransactionType.visa;
-        public string sessionId { get; set; }
+        public string? sessionId { get; set; }
         public string? TransactionId { get; set; }
         public string? carrierId { get; set; }
         public string? carrierName { get; set; }
+        public string? TrackingNumber { get; set; }
+        public ShippingStatus ShippingStatus { get; set; } = ShippingStatus.Created;
         public DateTime shippodDate { get; set; }
 
+    }
+    public enum ShippingStatus
+    {
+        Created,
+        Shipped,
+        InTransit,
+        Delivered,
+        Cancelled
     }
 }

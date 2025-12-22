@@ -11,10 +11,10 @@ using Test_Api.Rpository.Irepository;
 
 namespace Test_Api.Areas.Students
 {
-    [Route("api/[controller]")]
+    [Route("[Area]/[controller]")]
     [ApiController]
     [Area("Students")]
-    [Authorize]
+
     public class CheckOutController : ControllerBase
     {
         public readonly IRepository<Order> _orderRepository;
@@ -32,10 +32,10 @@ namespace Test_Api.Areas.Students
             _orderitemRepository = orderitemRepository;
         }
 
-        [HttpPut("{orderId}")]
-        public async Task<IActionResult> success(int orderId , CancellationToken cancellationToken)
+        [HttpGet("success/{orderId}")]
+        public async Task<IActionResult> success(int orderId, CancellationToken cancellationToken)
         {
-            var order = await _orderRepository.GetOneAsync(e=>e.Id == orderId);
+            var order = await _orderRepository.GetOneAsync(e=>e.Id == orderId,cancellationToken:cancellationToken);
             if (order == null) 
                 return NotFound();
 
@@ -54,6 +54,7 @@ namespace Test_Api.Areas.Students
             order.Status = OrderStatus.Processing;
             var service = new SessionService();
             var transaltaion = service.Get(order.sessionId);
+           
 
             //Add cart in order
             var cart =await _cartsRepository.GetAllAsync(e => e.ApplicationUserId == order.ApplicationUserId, includes: [e => e.Courses],cancellationToken:cancellationToken);
@@ -74,13 +75,31 @@ namespace Test_Api.Areas.Students
                 _cartsRepository.Delete(item);
             }
            await _cartsRepository.ComitSaveAsync(cancellationToken);
-
+            
             return Ok();
         }
 
-        [HttpPut("{orderId}")]
-        public IActionResult cancel(int orderId)
+        [HttpGet("cancel/{orderId}")]
+        public async Task<IActionResult> cancel(int orderId, CancellationToken cancellationToken)
         {
+            var order = await _orderRepository.GetOneAsync(e => e.Id == orderId,cancellationToken:cancellationToken);
+            if (order == null)
+                return NotFound();
+
+            var userid = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userid == null)
+                return NotFound();
+
+            var user = await _userManager.FindByIdAsync(userid);
+            if (user == null)
+                return NotFound();
+
+            await _emailSender.SendEmailAsync(user.Email!, "No order is not Completed",
+                $"No order is canceled because is not Completed");
+
+            order.Status = OrderStatus.Cancelled;
+            await _orderitemRepository.ComitSaveAsync(cancellationToken);
+
             return BadRequest(new
             {
                 msg="canceld buy course"
