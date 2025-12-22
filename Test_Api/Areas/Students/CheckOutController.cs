@@ -14,6 +14,7 @@ namespace Test_Api.Areas.Students
     [Route("[Area]/[controller]")]
     [ApiController]
     [Area("Students")]
+    [Authorize]
 
     public class CheckOutController : ControllerBase
     {
