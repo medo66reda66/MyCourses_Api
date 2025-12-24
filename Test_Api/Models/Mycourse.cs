@@ -12,5 +12,8 @@ namespace Test_Api.Models
         public int courseId { get; set; }
         public Course Course { get; set; }
         public decimal Price { get; set; }
+        public string? ApplicationuserId {  get; set; }
+        public ApplicationUser applicationUser { get; set; }
+        public DateTime? BuyAt { get; set; } = DateTime.Now;
     }
 }

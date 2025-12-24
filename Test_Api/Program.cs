@@ -73,6 +73,7 @@ namespace Test_Api
             builder.Services.AddScoped<IRepository<CourseVideos> , Repository<CourseVideos>>();
             builder.Services.AddScoped<IRepository<Promotion> , Repository<Promotion>>();
             builder.Services.AddScoped<IRepository<Order> , Repository<Order>>();
+            builder.Services.AddScoped<IRepository<Mycourse> , Repository<Mycourse>>();
             builder.Services.AddScoped<IrepositoruSupImg , RepositorySupImg>();
             builder.Services.AddScoped<Irepositoruorderitem , Repositoryorderitem>();
             builder.Services.AddScoped<IToken, Token>();
